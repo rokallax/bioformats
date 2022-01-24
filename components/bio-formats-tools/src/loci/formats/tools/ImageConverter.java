@@ -470,8 +470,8 @@ public final class ImageConverter {
     LOGGER.info(in);
     reader = new ImageReader();
     if (swapOrder != null) {
-      dimSwapper.swapDimensions(swapOrder);
       reader = dimSwapper = new DimensionSwapper(reader);
+      dimSwapper.swapDimensions(swapOrder);
     }
     if (stitch) {
       reader = new FileStitcher(reader);
