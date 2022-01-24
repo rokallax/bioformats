@@ -56,6 +56,7 @@ import loci.common.services.ServiceFactory;
 import loci.formats.ChannelFiller;
 import loci.formats.ChannelMerger;
 import loci.formats.ChannelSeparator;
+import loci.formats.DimensionSwapper;
 import loci.formats.FilePattern;
 import loci.formats.FileStitcher;
 import loci.formats.FormatException;
@@ -126,9 +127,11 @@ public final class ImageConverter {
   private String cacheDir = null;
   private boolean originalMetadata = true;
   private boolean noSequential = false;
+  private String swapOrder = null;
 
   private IFormatReader reader;
   private MinMaxCalculator minMax;
+  private DimensionSwapper dimSwapper;
 
   private HashMap<String, Integer> nextOutputIndex = new HashMap<String, Integer>();
   private boolean firstTile = true;
@@ -248,6 +251,9 @@ public final class ImageConverter {
         else if (args[i].equals("-no-sequential")) {
           noSequential = true;
         }
+        else if (args[i].equals("-swap")) {
+          swapOrder = args[++i].toUpperCase();
+        }
         else if (!args[i].equals(CommandLineTools.NO_UPGRADE_CHECK)) {
           LOGGER.error("Found unknown command flag: {}; exiting.", args[i]);
           return false;
@@ -365,6 +371,7 @@ public final class ImageConverter {
       "      -pyramid-scale: generates a pyramid image with each subsequent resolution level divided by scale",
       "-pyramid-resolutions: generates a pyramid image with the given number of resolution levels ",
       "      -no-sequential: do not assume that planes are written in sequential order",
+      "               -swap: override the default input dimension order",
       "",
       "The extension of the output file specifies the file format to use",
       "for the conversion. The list of available formats and extensions is:",
@@ -462,6 +469,10 @@ public final class ImageConverter {
     long start = System.currentTimeMillis();
     LOGGER.info(in);
     reader = new ImageReader();
+    if (swapOrder != null) {
+      dimSwapper.swapDimensions(swapOrder);
+      reader = dimSwapper = new DimensionSwapper(reader);
+    }
     if (stitch) {
       reader = new FileStitcher(reader);
       Location f = new Location(in);
